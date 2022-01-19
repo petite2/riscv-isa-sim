@@ -34,6 +34,7 @@ void mmu_t::flush_tlb()
   memset(tlb_insn_tag, -1, sizeof(tlb_insn_tag));
   memset(tlb_load_tag, -1, sizeof(tlb_load_tag));
   memset(tlb_store_tag, -1, sizeof(tlb_store_tag));
+  memset(tlb_load_color, -1, sizeof(tlb_load_color));
 
   flush_icache();
 }
@@ -183,6 +184,14 @@ void mmu_t::store_slow_path(reg_t addr, reg_t len, const uint8_t* bytes, uint32_
   }
 }
 
+void mmu_t::colored_load_slow_path(reg_t addr, reg_t len, uint8_t* bytes, uint32_t xlate_flags, reg_t color)
+{
+  if (color != 0) {
+    throw trap_load_access_fault((proc) ? proc->state.v : false, addr, 0, 0);
+  }
+  load_slow_path(addr, len, bytes, xlate_flags);
+}
+
 tlb_entry_t mmu_t::refill_tlb(reg_t vaddr, reg_t paddr, char* host_addr, access_type type)
 {
   reg_t idx = (vaddr >> PGSHIFT) % TLB_ENTRIES;
@@ -193,8 +202,10 @@ tlb_entry_t mmu_t::refill_tlb(reg_t vaddr, reg_t paddr, char* host_addr, access_
   if (proc && get_field(proc->state.mstatus->read(), MSTATUS_MPRV))
     return entry;
 
-  if ((tlb_load_tag[idx] & ~TLB_CHECK_TRIGGERS) != expected_tag)
+  if ((tlb_load_tag[idx] & ~TLB_CHECK_TRIGGERS) != expected_tag) {
     tlb_load_tag[idx] = -1;
+    tlb_load_color[idx] = -1;
+  }
   if ((tlb_store_tag[idx] & ~TLB_CHECK_TRIGGERS) != expected_tag)
     tlb_store_tag[idx] = -1;
   if ((tlb_insn_tag[idx] & ~TLB_CHECK_TRIGGERS) != expected_tag)
@@ -208,7 +219,10 @@ tlb_entry_t mmu_t::refill_tlb(reg_t vaddr, reg_t paddr, char* host_addr, access_
   if (pmp_homogeneous(paddr & ~reg_t(PGSIZE - 1), PGSIZE)) {
     if (type == FETCH) tlb_insn_tag[idx] = expected_tag;
     else if (type == STORE) tlb_store_tag[idx] = expected_tag;
-    else tlb_load_tag[idx] = expected_tag;
+    else {
+      tlb_load_tag[idx] = expected_tag;
+      tlb_load_color[idx] = 0;
+    }
   }
 
   tlb_data[idx] = entry;

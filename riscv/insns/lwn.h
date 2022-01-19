@@ -1,1 +1,1 @@
-WRITE_RD(MMU.load_int32(RS1 + insn.i_imm() + 4));
+WRITE_RD(MMU.colored_load_int32(RS1 + insn.shamt(), insn.color()));

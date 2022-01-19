@@ -699,7 +699,7 @@ disassembler_t::disassembler_t(int xlen)
   DEFINE_XLOAD(lh)
   DEFINE_XLOAD(lhu)
   DEFINE_XLOAD(lw)
-  DEFINE_XLOAD(lwn)
+  DEFINE_COLORED_XLOAD(lwn)
   DEFINE_XLOAD(lwu)
   DEFINE_XLOAD(ld)
 
