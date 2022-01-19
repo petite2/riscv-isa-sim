@@ -89,6 +89,7 @@ riscv_insn_ext_i = \
 	lhu \
 	lui \
 	lw \
+	lwn \
 	lwu \
 	or \
 	ori \

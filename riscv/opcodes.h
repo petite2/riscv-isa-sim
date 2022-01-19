@@ -88,6 +88,15 @@ static uint32_t lw(unsigned int rd, unsigned int base, uint16_t offset)
     MATCH_LW;
 }
 
+static uint32_t lwn(unsigned int rd, unsigned int base, uint16_t offset) __attribute__ ((unused));
+static uint32_t lwn(unsigned int rd, unsigned int base, uint16_t offset)
+{
+  return (bits(offset, 11, 0) << 20) |
+    (base << 15) |
+    (bits(rd, 4, 0) << 7) |
+    MATCH_LWN;
+}
+
 static uint32_t lh(unsigned int rd, unsigned int base, uint16_t offset) __attribute__ ((unused));
 static uint32_t lh(unsigned int rd, unsigned int base, uint16_t offset)
 {
