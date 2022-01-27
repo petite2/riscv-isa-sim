@@ -150,20 +150,20 @@ public:
   load_func(int32, guest_load, RISCV_XLATE_VIRT)
   load_func(int64, guest_load, RISCV_XLATE_VIRT)
 
-  // template for functions that load an aligned value from memory with color check
-  #define colored_load_func(type, prefix, xlate_flags) \
-    inline type##_t prefix##_##type(reg_t addr, reg_t color, bool require_alignment = false) { \
+  // template for functions that load an aligned value from memory with label check
+  #define labeled_load_func(type, prefix, xlate_flags) \
+    inline type##_t prefix##_##type(reg_t addr, reg_t label, bool require_alignment = false) { \
       if (unlikely(addr & (sizeof(type##_t)-1))) { \
         if (require_alignment) load_reserved_address_misaligned(addr); \
         else return misaligned_load(addr, sizeof(type##_t), xlate_flags); \
       } \
       reg_t vpn = addr >> PGSHIFT; \
       size_t size = sizeof(type##_t); \
-      if ((xlate_flags) == 0 && likely(tlb_load_tag[vpn % TLB_ENTRIES] == vpn) && (tlb_load_color[vpn % TLB_ENTRIES] == color)) { \
+      if ((xlate_flags) == 0 && likely(tlb_load_tag[vpn % TLB_ENTRIES] == vpn) && (tlb_load_label[vpn % TLB_ENTRIES] == label)) { \
         if (proc) READ_MEM(addr, size); \
         return from_target(*(target_endian<type##_t>*)(tlb_data[vpn % TLB_ENTRIES].host_offset + addr)); \
       } \
-      if ((xlate_flags) == 0 && unlikely(tlb_load_tag[vpn % TLB_ENTRIES] == (vpn | TLB_CHECK_TRIGGERS)) && (tlb_load_color[vpn % TLB_ENTRIES] == color)) { \
+      if ((xlate_flags) == 0 && unlikely(tlb_load_tag[vpn % TLB_ENTRIES] == (vpn | TLB_CHECK_TRIGGERS)) && (tlb_load_label[vpn % TLB_ENTRIES] == label)) { \
         type##_t data = from_target(*(target_endian<type##_t>*)(tlb_data[vpn % TLB_ENTRIES].host_offset + addr)); \
         if (!matched_trigger) { \
           matched_trigger = trigger_exception(OPERATION_LOAD, addr, data); \
@@ -174,13 +174,13 @@ public:
         return data; \
       } \
       target_endian<type##_t> res; \
-      colored_load_slow_path(addr, sizeof(type##_t), (uint8_t*)&res, (xlate_flags), color); \
+      labeled_load_slow_path(addr, sizeof(type##_t), (uint8_t*)&res, (xlate_flags), label); \
       if (proc) READ_MEM(addr, size); \
       return from_target(res); \
     }
 
-  // load value from memory at aligned address if color matches; sign extend to register width
-  colored_load_func(int32, colored_load, 0)
+  // load value from memory at aligned address if label matches; sign extend to register width
+  labeled_load_func(int32, labeled_load, 0)
 
 #ifndef RISCV_ENABLE_COMMITLOG
 # define WRITE_MEM(addr, value, size) ({})
@@ -440,7 +440,7 @@ private:
   reg_t tlb_insn_tag[TLB_ENTRIES];
   reg_t tlb_load_tag[TLB_ENTRIES];
   reg_t tlb_store_tag[TLB_ENTRIES];
-  reg_t tlb_load_color[TLB_ENTRIES];
+  reg_t tlb_load_label[TLB_ENTRIES];
 
   // finish translation on a TLB miss and update the TLB
   tlb_entry_t refill_tlb(reg_t vaddr, reg_t paddr, char* host_addr, access_type type);
@@ -456,7 +456,7 @@ private:
   tlb_entry_t fetch_slow_path(reg_t addr);
   void load_slow_path(reg_t addr, reg_t len, uint8_t* bytes, uint32_t xlate_flags);
   void store_slow_path(reg_t addr, reg_t len, const uint8_t* bytes, uint32_t xlate_flags);
-  void colored_load_slow_path(reg_t addr, reg_t len, uint8_t* bytes, uint32_t xlate_flags, reg_t color);
+  void labeled_load_slow_path(reg_t addr, reg_t len, uint8_t* bytes, uint32_t xlate_flags, reg_t label);
   bool mmio_load(reg_t addr, size_t len, uint8_t* bytes);
   bool mmio_store(reg_t addr, size_t len, const uint8_t* bytes);
   bool mmio_ok(reg_t addr, access_type type);

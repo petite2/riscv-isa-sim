@@ -35,13 +35,13 @@ struct : public arg_t {
   std::string to_string(insn_t insn) const {
     return std::to_string((int)insn.shamt()) + '(' + xpr_name[insn.rs1()] + ')';
   }
-} colored_load_address;
+} labeled_load_address;
 
 struct : public arg_t {
   std::string to_string(insn_t insn) const {
-    return std::to_string((int)insn.color());
+    return std::to_string((int)insn.label());
   }
-} address_color;
+} address_label;
 
 struct : public arg_t {
   std::string to_string(insn_t insn) const {
@@ -480,9 +480,9 @@ static void NOINLINE add_xstore_insn(disassembler_t* d, const char* name, uint32
   d->add_insn(new disasm_insn_t(name, match, mask, {&xrs2, &store_address}));
 }
 
-static void NOINLINE add_colored_xload_insn(disassembler_t* d, const char* name, uint32_t match, uint32_t mask)
+static void NOINLINE add_labeled_xload_insn(disassembler_t* d, const char* name, uint32_t match, uint32_t mask)
 {
-  d->add_insn(new disasm_insn_t(name, match, mask, {&xrd, &colored_load_address, &address_color}));
+  d->add_insn(new disasm_insn_t(name, match, mask, {&xrd, &labeled_load_address, &address_label}));
 }
 
 static void NOINLINE add_fload_insn(disassembler_t* d, const char* name, uint32_t match, uint32_t mask)
@@ -680,7 +680,7 @@ disassembler_t::disassembler_t(int xlen)
   #define DEFINE_B1TYPE(name, code) add_b1type_insn(this, name, match_##code, mask_##code);
   #define DEFINE_XLOAD(code) add_xload_insn(this, #code, match_##code, mask_##code);
   #define DEFINE_XSTORE(code) add_xstore_insn(this, #code, match_##code, mask_##code);
-  #define DEFINE_COLORED_XLOAD(code) add_colored_xload_insn(this, #code, match_##code, mask_##code);
+  #define DEFINE_LABELED_XLOAD(code) add_labeled_xload_insn(this, #code, match_##code, mask_##code);
   #define DEFINE_XAMO(code) add_xamo_insn(this, #code, match_##code, mask_##code);
   #define DEFINE_XLOAD_BASE(code) add_xlr_insn(this, #code, match_##code, mask_##code);
   #define DEFINE_XSTORE_BASE(code) add_xst_insn(this, #code, match_##code, mask_##code);
@@ -699,7 +699,7 @@ disassembler_t::disassembler_t(int xlen)
   DEFINE_XLOAD(lh)
   DEFINE_XLOAD(lhu)
   DEFINE_XLOAD(lw)
-  DEFINE_COLORED_XLOAD(lwn)
+  DEFINE_LABELED_XLOAD(lwn)
   DEFINE_XLOAD(lwu)
   DEFINE_XLOAD(ld)
 
