@@ -179,8 +179,17 @@ public:
       return from_target(res); \
     }
 
+  // load value from memory at aligned address; zero extend to register width
+  labeled_load_func(uint8, labeled_load, 0)
+  labeled_load_func(uint16, labeled_load, 0)
+  labeled_load_func(uint32, labeled_load, 0)
+  labeled_load_func(uint64, labeled_load, 0)
+
   // load value from memory at aligned address if label matches; sign extend to register width
+  labeled_load_func(int8, labeled_load, 0)
+  labeled_load_func(int16, labeled_load, 0)
   labeled_load_func(int32, labeled_load, 0)
+  labeled_load_func(int64, labeled_load, 0)
 
 #ifndef RISCV_ENABLE_COMMITLOG
 # define WRITE_MEM(addr, value, size) ({})

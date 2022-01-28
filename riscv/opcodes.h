@@ -88,15 +88,6 @@ static uint32_t lw(unsigned int rd, unsigned int base, uint16_t offset)
     MATCH_LW;
 }
 
-static uint32_t lwn(unsigned int rd, unsigned int base, uint16_t offset) __attribute__ ((unused));
-static uint32_t lwn(unsigned int rd, unsigned int base, uint16_t offset)
-{
-  return (bits(offset, 11, 0) << 20) |
-    (base << 15) |
-    (bits(rd, 4, 0) << 7) |
-    MATCH_LWN;
-}
-
 static uint32_t lh(unsigned int rd, unsigned int base, uint16_t offset) __attribute__ ((unused));
 static uint32_t lh(unsigned int rd, unsigned int base, uint16_t offset)
 {
@@ -113,6 +104,42 @@ static uint32_t lb(unsigned int rd, unsigned int base, uint16_t offset)
     (base << 15) |
     (bits(rd, 4, 0) << 7) |
     MATCH_LB;
+}
+
+static uint32_t ldn(unsigned int rd, unsigned int base, uint16_t offset) __attribute__ ((unused));
+static uint32_t ldn(unsigned int rd, unsigned int base, uint16_t offset)
+{
+  return (bits(offset, 11, 0) << 20) |
+    (base << 15) |
+    (bits(rd, 4, 0) << 7) |
+    MATCH_LDN;
+}
+
+static uint32_t lwn(unsigned int rd, unsigned int base, uint16_t offset) __attribute__ ((unused));
+static uint32_t lwn(unsigned int rd, unsigned int base, uint16_t offset)
+{
+  return (bits(offset, 11, 0) << 20) |
+    (base << 15) |
+    (bits(rd, 4, 0) << 7) |
+    MATCH_LWN;
+}
+
+static uint32_t lhn(unsigned int rd, unsigned int base, uint16_t offset) __attribute__ ((unused));
+static uint32_t lhn(unsigned int rd, unsigned int base, uint16_t offset)
+{
+  return (bits(offset, 11, 0) << 20) |
+    (base << 15) |
+    (bits(rd, 4, 0) << 7) |
+    MATCH_LHN;
+}
+
+static uint32_t lbn(unsigned int rd, unsigned int base, uint16_t offset) __attribute__ ((unused));
+static uint32_t lbn(unsigned int rd, unsigned int base, uint16_t offset)
+{
+  return (bits(offset, 11, 0) << 20) |
+    (base << 15) |
+    (bits(rd, 4, 0) << 7) |
+    MATCH_LBN;
 }
 
 static uint32_t csrw(unsigned int source, unsigned int csr) __attribute__ ((unused));

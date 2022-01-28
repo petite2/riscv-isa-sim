@@ -83,14 +83,20 @@ riscv_insn_ext_i = \
 	jal \
 	jalr \
 	lb \
+	lbn \
 	lbu \
+	lbun \
 	ld \
+	ldn \
 	lh \
+	lhn \
 	lhu \
+	lhun \
 	lui \
 	lw \
 	lwn \
 	lwu \
+	lwun \
 	or \
 	ori \
 	sb \

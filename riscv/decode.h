@@ -96,6 +96,7 @@ public:
   uint64_t iorw() { return x(20, 8); }
   uint64_t bs  () {return x(30,2);} // Crypto ISE - SM4/AES32 byte select.
   uint64_t rcon() {return x(20,4);} // Crypto ISE - AES64 round const.
+  uint64_t ldst_size() { return x(12, 2); } // log2(size of load in bytes)
 
   int64_t rvc_imm() { return x(2, 5) + (xs(12, 1) << 5); }
   int64_t rvc_zimm() { return x(2, 5) + (x(12, 1) << 5); }
