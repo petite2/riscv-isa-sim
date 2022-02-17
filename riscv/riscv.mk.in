@@ -100,8 +100,11 @@ riscv_insn_ext_i = \
 	or \
 	ori \
 	sb \
+	sbn \
 	sd \
+	sdn \
 	sh \
+	shn \
 	sll \
 	slli \
 	slliw \
@@ -121,6 +124,7 @@ riscv_insn_ext_i = \
 	sub \
 	subw \
 	sw \
+	swn \
 	xor \
 	xori \
 	fence \

@@ -186,10 +186,18 @@ void mmu_t::store_slow_path(reg_t addr, reg_t len, const uint8_t* bytes, uint32_
 
 void mmu_t::labeled_load_slow_path(reg_t addr, reg_t len, uint8_t* bytes, uint32_t xlate_flags, reg_t label)
 {
-  if (label != 0) {
+  if (label != (addr >> PGSHIFT) % 8) {
     throw trap_load_access_fault((proc) ? proc->state.v : false, addr, 0, 0);
   }
   load_slow_path(addr, len, bytes, xlate_flags);
+}
+
+void mmu_t::labeled_store_slow_path(reg_t addr, reg_t len, const uint8_t* bytes, uint32_t xlate_flags, reg_t label)
+{
+  if (label != (addr >> PGSHIFT) % 8) {
+    throw trap_store_access_fault((proc) ? proc->state.v : false, addr, 0, 0);
+  }
+  store_slow_path(addr, len, bytes, xlate_flags);
 }
 
 tlb_entry_t mmu_t::refill_tlb(reg_t vaddr, reg_t paddr, char* host_addr, access_type type)
@@ -208,6 +216,7 @@ tlb_entry_t mmu_t::refill_tlb(reg_t vaddr, reg_t paddr, char* host_addr, access_
   }
   if ((tlb_store_tag[idx] & ~TLB_CHECK_TRIGGERS) != expected_tag)
     tlb_store_tag[idx] = -1;
+    tlb_store_label[idx] = -1;
   if ((tlb_insn_tag[idx] & ~TLB_CHECK_TRIGGERS) != expected_tag)
     tlb_insn_tag[idx] = -1;
 
@@ -218,10 +227,13 @@ tlb_entry_t mmu_t::refill_tlb(reg_t vaddr, reg_t paddr, char* host_addr, access_
 
   if (pmp_homogeneous(paddr & ~reg_t(PGSIZE - 1), PGSIZE)) {
     if (type == FETCH) tlb_insn_tag[idx] = expected_tag;
-    else if (type == STORE) tlb_store_tag[idx] = expected_tag;
+    else if (type == STORE) {
+      tlb_store_tag[idx] = expected_tag;
+      tlb_store_label[idx] = idx % 8;
+    }
     else {
       tlb_load_tag[idx] = expected_tag;
-      tlb_load_label[idx] = 0;
+      tlb_load_label[idx] = idx % 8;
     }
   }
 

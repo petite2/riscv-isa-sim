@@ -179,7 +179,7 @@ public:
       return from_target(res); \
     }
 
-  // load value from memory at aligned address; zero extend to register width
+  // load value from memory at aligned address if label matches; zero extend to register width
   labeled_load_func(uint8, labeled_load, 0)
   labeled_load_func(uint16, labeled_load, 0)
   labeled_load_func(uint32, labeled_load, 0)
@@ -282,6 +282,39 @@ public:
   // perform an atomic memory operation at an aligned address
   amo_func(uint32)
   amo_func(uint64)
+
+  // template for functions that store an aligned value to memory with label check
+  #define labeled_store_func(type, prefix, xlate_flags) \
+    void prefix##_##type(reg_t addr, type##_t val, reg_t label) { \
+      if (unlikely(addr & (sizeof(type##_t)-1))) \
+        return misaligned_store(addr, val, sizeof(type##_t), xlate_flags); \
+      reg_t vpn = addr >> PGSHIFT; \
+      size_t size = sizeof(type##_t); \
+      if ((xlate_flags) == 0 && likely(tlb_store_tag[vpn % TLB_ENTRIES] == vpn) && (tlb_store_label[vpn % TLB_ENTRIES] == label)) { \
+        if (proc) WRITE_MEM(addr, val, size); \
+        *(target_endian<type##_t>*)(tlb_data[vpn % TLB_ENTRIES].host_offset + addr) = to_target(val); \
+      } \
+      else if ((xlate_flags) == 0 && unlikely(tlb_store_tag[vpn % TLB_ENTRIES] == (vpn | TLB_CHECK_TRIGGERS)) && (tlb_store_label[vpn % TLB_ENTRIES] == label)) { \
+        if (!matched_trigger) { \
+          matched_trigger = trigger_exception(OPERATION_STORE, addr, val); \
+          if (matched_trigger) \
+            throw *matched_trigger; \
+        } \
+        if (proc) WRITE_MEM(addr, val, size); \
+        *(target_endian<type##_t>*)(tlb_data[vpn % TLB_ENTRIES].host_offset + addr) = to_target(val); \
+      } \
+      else { \
+        target_endian<type##_t> target_val = to_target(val); \
+        labeled_store_slow_path(addr, sizeof(type##_t), (const uint8_t*)&target_val, (xlate_flags), label); \
+        if (proc) WRITE_MEM(addr, val, size); \
+      } \
+  }
+
+  // store value to memory at aligned address if label matches
+  labeled_store_func(uint8, labeled_store, 0)
+  labeled_store_func(uint16, labeled_store, 0)
+  labeled_store_func(uint32, labeled_store, 0)
+  labeled_store_func(uint64, labeled_store, 0)
 
   inline void yield_load_reservation()
   {
@@ -450,6 +483,7 @@ private:
   reg_t tlb_load_tag[TLB_ENTRIES];
   reg_t tlb_store_tag[TLB_ENTRIES];
   reg_t tlb_load_label[TLB_ENTRIES];
+  reg_t tlb_store_label[TLB_ENTRIES];
 
   // finish translation on a TLB miss and update the TLB
   tlb_entry_t refill_tlb(reg_t vaddr, reg_t paddr, char* host_addr, access_type type);
@@ -466,6 +500,7 @@ private:
   void load_slow_path(reg_t addr, reg_t len, uint8_t* bytes, uint32_t xlate_flags);
   void store_slow_path(reg_t addr, reg_t len, const uint8_t* bytes, uint32_t xlate_flags);
   void labeled_load_slow_path(reg_t addr, reg_t len, uint8_t* bytes, uint32_t xlate_flags, reg_t label);
+  void labeled_store_slow_path(reg_t addr, reg_t len, const uint8_t* bytes, uint32_t xlate_flags, reg_t label);
   bool mmio_load(reg_t addr, size_t len, uint8_t* bytes);
   bool mmio_store(reg_t addr, size_t len, const uint8_t* bytes);
   bool mmio_ok(reg_t addr, access_type type);

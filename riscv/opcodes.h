@@ -70,6 +70,46 @@ static uint32_t sb(unsigned int src, unsigned int base, uint16_t offset)
     MATCH_SB;
 }
 
+static uint32_t swn(unsigned int src, unsigned int base, uint16_t offset) __attribute__ ((unused));
+static uint32_t swn(unsigned int src, unsigned int base, uint16_t offset)
+{
+  return (bits(offset, 11, 5) << 25) |
+    (src << 20) |
+    (base << 15) |
+    (bits(offset, 4, 0) << 7) |
+    MATCH_SWN;
+}
+
+static uint32_t sdn(unsigned int src, unsigned int base, uint16_t offset) __attribute__ ((unused));
+static uint32_t sdn(unsigned int src, unsigned int base, uint16_t offset)
+{
+  return (bits(offset, 11, 5) << 25) |
+    (src << 20) |
+    (base << 15) |
+    (bits(offset, 4, 0) << 7) |
+    MATCH_SDN;
+}
+
+static uint32_t shn(unsigned int src, unsigned int base, uint16_t offset) __attribute__ ((unused));
+static uint32_t shn(unsigned int src, unsigned int base, uint16_t offset)
+{
+  return (bits(offset, 11, 5) << 25) |
+    (src << 20) |
+    (base << 15) |
+    (bits(offset, 4, 0) << 7) |
+    MATCH_SHN;
+}
+
+static uint32_t sbn(unsigned int src, unsigned int base, uint16_t offset) __attribute__ ((unused));
+static uint32_t sbn(unsigned int src, unsigned int base, uint16_t offset)
+{
+  return (bits(offset, 11, 5) << 25) |
+    (src << 20) |
+    (base << 15) |
+    (bits(offset, 4, 0) << 7) |
+    MATCH_SBN;
+}
+
 static uint32_t ld(unsigned int rd, unsigned int base, uint16_t offset) __attribute__ ((unused));
 static uint32_t ld(unsigned int rd, unsigned int base, uint16_t offset)
 {

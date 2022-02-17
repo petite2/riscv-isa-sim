@@ -39,6 +39,12 @@ struct : public arg_t {
 
 struct : public arg_t {
   std::string to_string(insn_t insn) const {
+    return std::to_string((int)insn.s_shamt()) + '*' + std::to_string(1 << (int)insn.ldst_size()) + '(' + xpr_name[insn.rs1()] + ')';
+  }
+} labeled_store_address;
+
+struct : public arg_t {
+  std::string to_string(insn_t insn) const {
     return std::to_string((int)insn.label());
   }
 } address_label;
@@ -485,6 +491,11 @@ static void NOINLINE add_labeled_xload_insn(disassembler_t* d, const char* name,
   d->add_insn(new disasm_insn_t(name, match, mask, {&xrd, &labeled_load_address, &address_label}));
 }
 
+static void NOINLINE add_labeled_xstore_insn(disassembler_t* d, const char* name, uint32_t match, uint32_t mask)
+{
+  d->add_insn(new disasm_insn_t(name, match, mask, {&xrs2, &labeled_store_address, &address_label}));
+}
+
 static void NOINLINE add_fload_insn(disassembler_t* d, const char* name, uint32_t match, uint32_t mask)
 {
   d->add_insn(new disasm_insn_t(name, match, mask, {&frd, &load_address}));
@@ -681,6 +692,7 @@ disassembler_t::disassembler_t(int xlen)
   #define DEFINE_XLOAD(code) add_xload_insn(this, #code, match_##code, mask_##code);
   #define DEFINE_XSTORE(code) add_xstore_insn(this, #code, match_##code, mask_##code);
   #define DEFINE_LABELED_XLOAD(code) add_labeled_xload_insn(this, #code, match_##code, mask_##code);
+  #define DEFINE_LABELED_XSTORE(code) add_labeled_xstore_insn(this, #code, match_##code, mask_##code);
   #define DEFINE_XAMO(code) add_xamo_insn(this, #code, match_##code, mask_##code);
   #define DEFINE_XLOAD_BASE(code) add_xlr_insn(this, #code, match_##code, mask_##code);
   #define DEFINE_XSTORE_BASE(code) add_xst_insn(this, #code, match_##code, mask_##code);
@@ -710,9 +722,13 @@ disassembler_t::disassembler_t(int xlen)
   DEFINE_LABELED_XLOAD(ldn)
 
   DEFINE_XSTORE(sb)
+  DEFINE_LABELED_XSTORE(sbn)
   DEFINE_XSTORE(sh)
+  DEFINE_LABELED_XSTORE(shn)
   DEFINE_XSTORE(sw)
+  DEFINE_LABELED_XSTORE(swn)
   DEFINE_XSTORE(sd)
+  DEFINE_LABELED_XSTORE(sdn)
 
   DEFINE_XAMO(amoadd_w)
   DEFINE_XAMO(amoswap_w)
