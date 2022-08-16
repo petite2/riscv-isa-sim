@@ -19,6 +19,9 @@
 const reg_t PGSIZE = 1 << PGSHIFT;
 const reg_t PGMASK = ~(PGSIZE-1);
 #define MAX_PADDR_BITS 56 // imposed by Sv39 / Sv48
+#define INLVSHIFT 6
+#define INLVWIDTH 1
+#define INLVPGMASK (((1 << (PGSHIFT - INLVWIDTH)) - 1) << INLVSHIFT)
 
 struct insn_fetch_t
 {
@@ -151,8 +154,16 @@ public:
   load_func(int64, guest_load, RISCV_XLATE_VIRT)
 
   // template for functions that load an aligned value from memory with label check
+  // Use label 0b111000 as a hint to not mess with the addresses for data we haven't made custom allocations for
   #define labeled_load_func(type, prefix, xlate_flags) \
     inline type##_t prefix##_##type(reg_t addr, reg_t label, bool require_alignment = false) { \
+      if (label != 0b111000 && label != 0b111100) { \
+        /*assert((addr & (((1 << INLVWIDTH) - 1) << (INLVSHIFT + INLVWIDTH))) == 0);*/ \
+        /*addr = addr + ((addr & (((1 << INLVWIDTH) - 1) << INLVSHIFT)) << INLVWIDTH);*/\
+        /*addr = (addr & ~(((1 << INLVWIDTH) - 1) << INLVSHIFT)) | ((label & ((1 << INLVWIDTH) - 1)) << INLVSHIFT);*/\
+        addr = (addr & ~INLVPGMASK) + ((((addr & INLVPGMASK) << 1) | ((label & ((1 << INLVWIDTH) - 1)) << INLVSHIFT)) & INLVPGMASK);\
+      } \
+      label = (addr >> PGSHIFT) & 7; \
       if (unlikely(addr & (sizeof(type##_t)-1))) { \
         if (require_alignment) load_reserved_address_misaligned(addr); \
         else return misaligned_load(addr, sizeof(type##_t), xlate_flags); \
@@ -286,6 +297,12 @@ public:
   // template for functions that store an aligned value to memory with label check
   #define labeled_store_func(type, prefix, xlate_flags) \
     void prefix##_##type(reg_t addr, type##_t val, reg_t label) { \
+      if (label != 0b111000 && label != 0b111100) { \
+        /*assert((addr & (((1 << INLVWIDTH) - 1) << (INLVSHIFT + INLVWIDTH))) == 0);*/ \
+        /*addr = (addr & ~(((1 << INLVWIDTH) - 1) << INLVSHIFT)) | ((label & ((1 << INLVWIDTH) - 1)) << INLVSHIFT);*/\
+        addr = (addr & ~INLVPGMASK) + ((((addr & INLVPGMASK) << 1) | ((label & ((1 << INLVWIDTH) - 1)) << INLVSHIFT)) & INLVPGMASK);\
+      } \
+      label = (addr >> PGSHIFT) & 7; \
       if (unlikely(addr & (sizeof(type##_t)-1))) \
         return misaligned_store(addr, val, sizeof(type##_t), xlate_flags); \
       reg_t vpn = addr >> PGSHIFT; \
